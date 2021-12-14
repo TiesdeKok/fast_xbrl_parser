@@ -1,7 +1,7 @@
 use std::{fs};
 use std::collections::HashMap;
 
-use minidom::Node;
+//use minidom::Node;
 
 fn main() {
 
@@ -28,13 +28,14 @@ fn main() {
         Period nodes types instant / startDate / endDate
     - [ ] Process unitRefs to get things like unit data
     - [ ] Deal with dimensions such as segments 
+        - This one is more difficult because we have to get the dimension refs
     
     */
 
     let mut contexts: HashMap<String,String> = HashMap::new();
 
     
-    for (_i, child) in elem.enumerate() {
+    'main_loop: for (_i, child) in elem.enumerate() {
         let name = child.tag_name().name();
         let namespace = child.tag_name().namespace().unwrap_or("");
         let prefix = child.lookup_prefix(namespace).unwrap_or(""); 
@@ -45,15 +46,46 @@ fn main() {
         if name == "context" {
             //println!("Names: {} {} {}", name, namespace, prefix);
             //println!("Value: {}", value);
-            //println!("ID {}", );
+            println!("ID {}\n", id);
             //let mut node_desc = child.children().filter(|e| e.node_type() == roxmltree::NodeType::Element);
             //dbg!(&node_desc.next());
-            let node = child.descendants().find(|n| n.has_tag_name("instant")).map(|n| n.text().unwrap_or(""));
-            dbg!(node);
-            break;
+            
+            // loop over descendants of child using enumerate
+            let main_ele_to_keep = ["period", "entity", "unit", "dimensions"];
+            for (_i, child_ele) in child.descendants().enumerate() {
+                if main_ele_to_keep.contains(&child_ele.tag_name().name()) {
+
+                    let to_keep = ["instant", "startDate", "endDate", "segment", "measure"];
+                    // Filter the descendants of child_ele for those with .name() equal to "instant" or "startDate" or "endDate"
+                    let node_desc_filtered = child_ele.descendants().filter(|e| to_keep.contains(&e.tag_name().name()));
+                    
+                    // loop over the filtered descendants
+                    for (_i, child_ele_filtered) in node_desc_filtered.enumerate() {
+                        let value = child_ele_filtered.text().unwrap_or("");
+                        let name = child_ele_filtered.tag_name().name();
+                        let namespace = child_ele_filtered.tag_name().namespace().unwrap_or("");
+                        // Print the values
+                        println!("{} {} {}", name, namespace, value);
+                    }
+                    //dbg!(node_desc_filtered.next());
+                    //break 'main_loop;
+                    //dbg!(&node_desc_name.next());
+                    //dbg!(&node_desc_name.next());
+
+            
+
+                }
+                //dbg!(&child_ele);
+            }
+            println!("\n----\n");
+
+            //let node = child.descendants().find(|n| n.has_tag_name("instant")).map(|n| n.text().unwrap_or(""));
+            //dbg!(node);
+            //break;
             //contexts.insert(id.to_string(), value.to_string());
          } else {
             //"GrossProfit"
+            /*
             const TAG: &str = "FinancialAssetsAndLiabilitiesNotMeasuredAtFairValuePolicyTextBlock";
             if name == TAG {
                 println!("Names: {} {} {}", name, namespace, prefix);
@@ -68,79 +100,16 @@ fn main() {
                 //println!("{} {:?} {:?} {:?}", i, child.tag_name(), child.text(), child.attributes());
                 //println!("{}", child.lookup_prefix());
                 break;
-                }
             }
-        
-    }
-
-    //doc.get_node(id)
-    
-    
-
-    //dbg!(elem);
-
-
-    //println!("With text:\n{}", &contents.to_string()[..100]);
-
-    /*
-
-    // Try the minidom crate
-
-    let root: Element = contents.parse().unwrap();
-
-    // Get the value
-    let value = &root.text();
-    println!("{:?}", value);
-    
-    // Get attributes
-    for (ii, t_item) in root.attrs().enumerate() {
-        println!("{:?}", t_item);
-    }
-
-    // Get the namespace
-    let ns = &root.ns();
-    dbg!(&ns);
-    //for (ii, t_item) in root.attrs().enumerate() {
-    //    println!("Root: {} {:?}", ii, t_item);
-    //}
-
-    //let test = root.attr("xmlns");
-    //println!("Root: {:?}", test);
-
-    let iter = root.children();
-
-    for (i, child) in iter.enumerate() {
-        if i == 0 {
-            println!("{:?}", &child);
-
-            // Get the value
-            let value = &child.text();
-            println!("{:?}", value);
-            
-            // Get attributes
-            for (ii, t_item) in child.attrs().enumerate() {
-                println!("{:?}", t_item);
-            }
-
-            // Get the namespace
-            let ns = &child.ns();
-            dbg!(&ns);
-
-            //let prefix = &child.prefix.clone();
-
-            // Get the prefix
-            //let prefix = &child.get_prefix();
-
-            // Get the namespace
-            //let prefix = Some(child.text());
-            // dbg!(prefix.unwrap_or(String::from("missing...")));
-            //println!("{} {} {} {}", i, child.name(), child.prefix(), child.children()[0]);
-            break;
+            */
         }
-
-        //println!("{} {}", i, child.name());
     }
-
-    //println!("{:?}", root);
-    */
 }
+
+// Duration_1_1_2021_To_3_31_2021_WD_bpg0CoUKDVIjJYfcRNA
+
+// Links:
+
+// https://www.sec.gov/Archives/edgar/data/51143/000155837021004922/ibm-20210331x10q_htm.xml
+
+//https://www.sec.gov/Archives/edgar/data/0000051143/000155837021004922/0001558370-21-004922-index.htm

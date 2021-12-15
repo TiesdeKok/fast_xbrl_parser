@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 minidom = "*"
 roxmltree = "*"
+regex = "*"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "*"

@@ -4,21 +4,55 @@ use std::io::Write;
 use std::collections::HashMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use clap::Parser;
+use reqwest::blocking::Client;
+use reqwest::StatusCode;
+use std::io::Read;
 
-
-//use minidom::Node;
 
 const _VERBOSE : u8 = 0;
 
+#[derive(Parser, Debug)]
+#[clap(about, author)]
+struct Args {
+    /// URL to retrieve
+    #[clap(short, long, default_value = "https://www.sec.gov/Archives/edgar/data/51143/000155837021004922/ibm-20210331x10q_htm.xml")]
+    url: String,
+
+    /// User agent
+    #[clap(long, default_value = "Ties - Ties@Ties.com")]
+    user_agent: String,
+
+    /// Saving location
+    #[clap(short, long, default_value = "xbrl_json.json")]
+    out_file: String
+
+    // Retrieved using `args.....`
+}
+
 fn main() {
+    // Get the arguments
+    let args = Args::parse();
+
+    
+    let client = Client::new();
+    let mut resp = client.get(args.url).header("User-Agent", args.user_agent).send().expect("Failed to send request");
+    let mut body = String::new();
+    resp.read_to_string(&mut body).expect("Failed to read response");
+    // TODO: Include status check here somewhere .
+
+    let cont_string = body.as_str();
 
     // Load the XML file as a string
+    /* 
     let filename = "ibm-20210331x10q_htm.xml"; // The working directory is the directory of the cargo package .... 
 
     let contents = fs::read_to_string(filename)
     .expect("Something went wrong reading the file");
 
-    let cont_string = contents.as_str();
+    //let cont_string = contents.as_str();
+    */
+
 
     // Not sure this does anything:
 
@@ -212,8 +246,8 @@ fn main() {
         let name: String = child.tag_name().name().to_string();
         let namespace: String = child.tag_name().namespace().unwrap_or("").to_string();
         let prefix = child.lookup_prefix(namespace.as_str()).unwrap_or(""); 
-        let context_ref = child.attribute("contextRef");
-        let unit_ref = child.attribute("unitRef");
+        let context_ref = &child.attribute("contextRef");
+        let unit_ref = &child.attribute("unitRef");
         let decimals = child.attribute("decimals").unwrap_or("");
         let value = child.text().unwrap_or("");
 
@@ -250,14 +284,18 @@ fn main() {
         if _VERBOSE > 0 {println!("Fact: {} {} {} {} \n {} {}", prefix, name, value, decimals, 
         context_ref.unwrap_or("no context"), unit_ref.unwrap_or("no unit"));}
 
+        // Add context_ref to fact item
+
+        //let context_ref = Some(context_ref.unwrap_or("").to_string());
+
         facts.push(FactItem {
             id : id.to_string(),
             prefix: prefix.to_string(),
             name : name.to_string(),
             value : value.to_string(),
             decimals : decimals.to_string(),
-            //context_ref : Some(context_ref.to_string()), <--- TO FIX
-            //unit_ref : unit_ref.to_string(), <--- TO FIX
+            context_ref : context_ref.map(str::to_string),
+            unit_ref : unit_ref.map(str::to_string),
             units : fact_units,
             dimensions : fact_dimensions,
             periods : fact_periods,
@@ -278,55 +316,6 @@ fn main() {
     let mut file = File::create(format!("{}/{}", output_dir, output_file)).expect("Failed to create file");
     file.write_all(facts_json.as_bytes()).expect("Failed to write to file");
 
-
-
-    //println!("\n\n -- Found {} facts -- \n", &fact_ele.count());
-
-    
-
-    //dbg!(&contexts);
-    //println!("\n----\n");
-
-
-        //let node = child.descendants().find(|n| n.has_tag_name("instant")).map(|n| n.text().unwrap_or(""));
-        //dbg!(node);
-        //break;
-        //contexts.insert(id.to_string(), value.to_string());
-
-
-        /* 
-
-        //let _namespace = child.tag_name().namespace().unwrap_or("");
-        //let _prefix = child.lookup_prefix(namespace).unwrap_or(""); 
-        // Improvement? --> let prefix = child.resolve_tag_name_prefix().unwrap_or("");
-        //let _value = child.text().unwrap_or("");
-
-
-        //println!("Names: {} {} {}", name, namespace, prefix);
-        //println!("Value: {}", value);
-
-
-         } else {
-            //"GrossProfit"
-            /*
-            const TAG: &str = "FinancialAssetsAndLiabilitiesNotMeasuredAtFairValuePolicyTextBlock";
-            if name == TAG {
-                println!("Names: {} {} {}", name, namespace, prefix);
-                println!("Value: {}", value);
-                
-                println!("\nAttribute values:");
-                for attr in child.attributes() {
-                    // print name and value
-                    println!("{} {}", attr.name(), attr.value());
-                }
-
-                //println!("{} {:?} {:?} {:?}", i, child.tag_name(), child.text(), child.attributes());
-                //println!("{}", child.lookup_prefix());
-                break;
-            }
-            */
-        }
-        */
 }
 
 

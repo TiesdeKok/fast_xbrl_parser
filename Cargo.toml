@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-minidom = "*"
 roxmltree = "*"
 regex = "*"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "*"
+clap = { version = "3.0.0-beta.5", features = ["derive"] }
+reqwest = { version = "*" , features = ["blocking"] }

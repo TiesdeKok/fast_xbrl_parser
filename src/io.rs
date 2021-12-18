@@ -2,7 +2,6 @@ pub mod load {
 
     use std::fs::{self};
     use std::io::{Read};
-    use std::path::Path;
     use reqwest::blocking::Client;
     use crate::helpers::edgar;
     use crate::helpers::settings::AppConfig;

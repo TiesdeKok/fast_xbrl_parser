@@ -1,1 +1,4 @@
 /target
+*.ipynb_checkpoints
+**.xml
+/.vscode

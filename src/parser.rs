@@ -90,7 +90,7 @@ pub mod xml {
 
         }
 
-        pub fn pretty_print(&self) {
+        pub fn _pretty_print(&self) {
             // print all the information in the struct in a pretty format with human readable labels
             println!("CIK: {}", self.cik);
             println!("CIK Padded: {}", self.cik_padded);

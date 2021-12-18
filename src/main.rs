@@ -61,7 +61,7 @@ fn main() {
         filing = XBRLFiling::parse(raw_xml, url_data.clone());
     }
 
-    filing.pretty_print();
+    filing._pretty_print();
 
     // Save to JSON file
 

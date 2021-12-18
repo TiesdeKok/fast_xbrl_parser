@@ -1,6 +1,5 @@
 
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
 use pythonize::{depythonize, pythonize};
 
 mod helpers;
@@ -63,16 +62,10 @@ fn get_json(url : String) -> PyResult<Py<PyAny>> {
     //Ok(json_str)
 }
 
-
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
+// Set up the module 
 
 #[pymodule]
-fn xbrl_parser(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+fn fast_xbrl_parser(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(parse_url, m)?)?;
     m.add_class::<edgar::EdgarUrl>()?;
     m.add_function(wrap_pyfunction!(get_json, m)?)?;

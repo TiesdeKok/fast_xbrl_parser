@@ -1,10 +1,10 @@
 [package]
-name = "xbrl_parser"
+name = "fast_xbrl_parser"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "xbrl_parser"
+name = "fast_xbrl_parser"
 crate-type = ["cdylib"]
 
 [dependencies]

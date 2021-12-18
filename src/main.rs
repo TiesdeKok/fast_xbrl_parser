@@ -1,14 +1,11 @@
-use std::{fs};
-use std::fs::File;
-use std::io::Write;
-use std::collections::HashMap;
-use regex::Regex;
-use serde::{Deserialize, Serialize};
 use clap::Parser;
-use reqwest::blocking::Client;
-use reqwest::StatusCode;
-use std::io::Read;
+use std::path::{PathBuf};
 
+mod helpers;
+mod parser;
+mod io;
+use crate::helpers::{edgar, settings};
+use crate::parser::xml::XBRLFiling;
 
 const _VERBOSE : u8 = 0;
 
@@ -16,310 +13,77 @@ const _VERBOSE : u8 = 0;
 #[clap(about, author)]
 struct Args {
     /// URL to retrieve
-    #[clap(short, long, default_value = "https://www.sec.gov/Archives/edgar/data/51143/000155837021004922/ibm-20210331x10q_htm.xml")]
+    #[clap(short, long, default_value = "https://www.sec.gov/Archives/edgar/data/1765651/000164033421003161/pse_10k_htm.xml")]
     url: String,
 
     /// User agent
-    #[clap(long, default_value = "Ties - Ties@Ties.com")]
+    #[clap(long, default_value = "config_value")]
     user_agent: String,
 
     /// Saving location
-    #[clap(short, long, default_value = "xbrl_json.json")]
-    out_file: String
-
-    // Retrieved using `args.....`
+    #[clap(short, long, default_value = "config_value")]
+    store_location: String
 }
 
 fn main() {
+    // -- Deal with arguments and config file -- 
+
+    // Initiaize config
+    let mut app_settings = settings::AppConfig::default();
+
     // Get the arguments
     let args = Args::parse();
 
+    if args.user_agent != "config_value".to_string() {
+        app_settings.user_agent = args.user_agent.clone();
+    }
+
+    if args.store_location != "config_value".to_string() {
+        app_settings.store_location = PathBuf::from(args.store_location.clone());
+    }
+
+    // Process the URL
+
+    let url_data = edgar::parse_url(args.url.to_string(), app_settings.clone());
+
+    // -----------------------
+    // -- Get the JSON data --
+    // -----------------------
+
+    let filing: XBRLFiling;
+    if url_data.done {
+        println!("File already exists, loading local");
+        let raw_json = io::load::load_json(url_data.clone(), app_settings.clone());
+        filing = serde_json::from_str(&raw_json).unwrap();
+    } else {
+        println!("File does not exists, so downloading {}", &url_data.raw_url);
+        let raw_xml = io::load::download(args.url, app_settings.clone());
+        filing = XBRLFiling::parse(raw_xml, url_data.clone());
+    }
+
+    filing.pretty_print();
+
+    // Save to JSON file
+
+    io::save::save(url_data.clone(), filing, app_settings.clone());
     
-    let client = Client::new();
-    let mut resp = client.get(args.url).header("User-Agent", args.user_agent).send().expect("Failed to send request");
-    let mut body = String::new();
-    resp.read_to_string(&mut body).expect("Failed to read response");
-    // TODO: Include status check here somewhere .
+}
 
-    let cont_string = body.as_str();
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn download_url() {
+        let url = "https://www.sec.gov/Archives/edgar/data/51143/000155837021004922/ibm-20210331x10q_htm.xml";
+        let settings = super::settings::AppConfig::default();
+        let url_data = super::edgar::parse_url(url.to_string(), settings.clone());
 
-    // Load the XML file as a string
-    /* 
-    let filename = "ibm-20210331x10q_htm.xml"; // The working directory is the directory of the cargo package .... 
-
-    let contents = fs::read_to_string(filename)
-    .expect("Something went wrong reading the file");
-
-    //let cont_string = contents.as_str();
-    */
-
-
-    // Not sure this does anything:
-
-    let re = Regex::new(r"\s+").unwrap();
-    let cont_string = re.replace_all(cont_string, " ");
-
-    let doc = roxmltree::Document::parse(&cont_string).unwrap();
-
-    // Get the root element
-
-
-    // show count of elem
-    //println!("{}", &elem.count());
-
-    /* TODO
-
-    - [ ] Process the context refs to get things like period data
-        Period nodes types instant / startDate / endDate
-    - [ ] Process unitRefs to get things like unit data
-    - [ ] Deal with dimensions such as segments 
-        - This one is more difficult because we have to get the dimension refs
-    
-    */
-
-    let elem = doc.root_element().children().filter(|e| e.node_type() == roxmltree::NodeType::Element);
-
-    // -- Process the context elements --
-
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-
-    struct Dimension {
-        key_ns : String,
-        key_value : String,
-        member_ns : String,
-        member_value : String
-    }
-
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-
-    struct Unit {
-        unit_type : String,
-        unit_value : String
-    }
-
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-
-    struct Period {
-        period_type : String,
-        period_value : String
-    }
-
-    let mut units: HashMap<String,Vec<Unit>> = HashMap::new();
-    let mut periods: HashMap<String,Vec<Period>> = HashMap::new();
-    let mut dimensions: HashMap<String,Vec<Dimension>> = HashMap::new();
-
-    // --- Process the unit elements ---
-    let unit_ele = elem.clone().filter(|e| e.tag_name().name() == "unit");
-    '_unit_loop: for (_i, child) in unit_ele.enumerate() {
-        let id = child.attribute("id").unwrap_or("");
-        let measure_nodes = child.descendants().filter(|e| e.tag_name().name() == "measure");
-
-        for (_i, m_ele) in measure_nodes.enumerate() {
-            let name = m_ele.parent().unwrap().tag_name().name();
-            let value = m_ele.text().unwrap_or("");
-            units.entry(id.to_string())
-            .or_default()
-            .push(Unit {
-                unit_type : name.to_string(),
-                unit_value : value.to_string()
-            });
-
-            if _VERBOSE > 1 {println!("{} {}", m_ele.parent().unwrap().tag_name().name(), m_ele.text().unwrap_or(""));}
+        assert_eq!(url_data.raw_url, url.to_string());
         }
-    }
-
-    // --- Process the context elements ---
-    let context_ele = elem.clone().filter(|e| e.tag_name().name() == "context");
-    '_context_loop: for (_i, child) in context_ele.enumerate() {
-        
-        let id = child.attribute("id").unwrap_or("");
-        if _VERBOSE > 1 {println!("ID {}\n", id);}
-
-        let node_desc = child.children().filter(|e| e.node_type() == roxmltree::NodeType::Element);
-
-        // loop over descendants and process the different types of elements
-        for (_i, child_ele) in node_desc.enumerate() {
-            match child_ele.tag_name().name() {
-                "period" => {
-                    if _VERBOSE > 1 {println!("\n -- Found period -- \n");}
-
-                    let to_keep = ["instant", "startDate", "endDate"];
-                    let node_desc_filtered = child_ele.descendants().filter(|e| to_keep.contains(&e.tag_name().name()));
-                    
-                    for (_i, child_ele_filtered) in node_desc_filtered.enumerate() {
-                        let value = child_ele_filtered.text().unwrap_or("");
-                        let name = child_ele_filtered.tag_name().name();
-                        let _namespace = child_ele_filtered.tag_name().namespace().unwrap_or("");
-
-                        periods.entry(id.to_string())
-                        .or_default()
-                        .push(Period {
-                            period_type : name.to_string(),
-                            period_value : value.to_string()
-                        });
-
-                        if _VERBOSE > 1 {println!("Period: {} {}", name, value);}
-                    }
-                }
-                "entity" => {
-                    if _VERBOSE > 1 {println!("\n -- Found entity -- \n");}
-
-                    let to_keep = ["explicitMember"];
-                    let node_desc_filtered = child_ele.descendants().filter(|e| to_keep.contains(&e.tag_name().name()));
-                    
-                    for (_i, child_ele_filtered) in node_desc_filtered.enumerate() {
-                        let value = child_ele_filtered.text().unwrap_or("");
-                        let _name = child_ele_filtered.tag_name().name();
-                        let _namespace = child_ele_filtered.tag_name().namespace().unwrap_or("");
-                        if child_ele_filtered.has_attribute("dimension") {
-                            let dimension_raw = child_ele_filtered.attribute("dimension").unwrap();
-                            let dimension_split = dimension_raw.split(":").collect::<Vec<&str>>();
-                            let dimension_ns = dimension_split[0];
-                            let dimension_value = dimension_split[1];
-
-                            let value_split = value.split(":").collect::<Vec<&str>>();
-                            let key_ns = value_split[0];
-                            let key_value = value_split[1];
-
-                            dimensions.entry(id.to_string())
-                            .or_default()
-                            .push(Dimension {
-                                key_ns : dimension_ns.to_string(),
-                                key_value : dimension_value.to_string(),
-                                member_ns : key_ns.to_string(),
-                                member_value : key_value.to_string()
-                            });
-    
-                            if _VERBOSE > 1 {println!("Segment: {} {} {} {}", dimension_ns, dimension_value, key_ns, key_value);}
-                        }
-
-
-                    }
-                    
-                }
-                _ => {}
-            }
-        }
-    }
-
-    // -- Loop over the fact elements --
-    
-    #[derive(Debug, Serialize)]
-    struct FactItem {
-        id : String,
-        prefix: String,
-        name : String,
-        value : String,
-        decimals : String,
-        context_ref : Option<String>,
-        unit_ref : Option<String>,
-        dimensions : Vec<Dimension>,
-        units : Vec<Unit>,
-        periods : Vec<Period>
-    }
-
-    impl FactItem {
-        fn default() -> FactItem {
-            FactItem {
-                id : "".to_string(),
-                prefix: "".to_string(),
-                name : "".to_string(),
-                value : "".to_string(),
-                decimals : "".to_string(),
-                context_ref : None,
-                unit_ref : None,
-                dimensions : Vec::new(),
-                units : Vec::new(),
-                periods : Vec::new()
-            }
-        }
-    }
-
-    let mut facts: Vec<FactItem> = Vec::new();
-
-    let non_fact_ele = ["context", "unit", "xbrl", "schemaRef"];
-    let fact_ele = elem.clone().filter(|e| !&non_fact_ele.contains(&e.tag_name().name()) && e.tag_name().namespace().is_some());
-
-    // loop over fact_ele using enumerate
-    '_fact_loop: for (_i, child) in fact_ele.enumerate() {
-        let id = child.attribute("id").unwrap_or("");
-        let name: String = child.tag_name().name().to_string();
-        let namespace: String = child.tag_name().namespace().unwrap_or("").to_string();
-        let prefix = child.lookup_prefix(namespace.as_str()).unwrap_or(""); 
-        let context_ref = &child.attribute("contextRef");
-        let unit_ref = &child.attribute("unitRef");
-        let decimals = child.attribute("decimals").unwrap_or("");
-        let value = child.text().unwrap_or("");
-
-        let mut fact_dimensions : Vec<Dimension> = Vec::new();
-        let mut fact_units : Vec<Unit> = Vec::new();
-        let mut fact_periods : Vec<Period>= Vec::new();
-
-        // Look up the units 
-        if unit_ref.is_some() {
-            let unit_ref_value = unit_ref.unwrap().to_string();
-            // if unit_ref in units 
-            if units.contains_key(&unit_ref_value) {
-                fact_units = units.get(&unit_ref_value).expect("Unit not found").clone();
-            }
-            
-        }
-
-        // Look up the dimensions
-        if context_ref.is_some() {
-            let context_ref_value = context_ref.unwrap().to_string();
-            if dimensions.contains_key(&context_ref_value) {
-                fact_dimensions = dimensions.get(&context_ref_value).expect("Dimension not found").clone();
-            }
-        }
-
-        // Look up the periods
-        if context_ref.is_some() {
-            let context_ref_value = context_ref.unwrap().to_string();
-            if periods.contains_key(&context_ref_value) {
-                fact_periods = periods.get(&context_ref_value).expect("Period not found").clone();
-            }
-        }
-
-        if _VERBOSE > 0 {println!("Fact: {} {} {} {} \n {} {}", prefix, name, value, decimals, 
-        context_ref.unwrap_or("no context"), unit_ref.unwrap_or("no unit"));}
-
-        // Add context_ref to fact item
-
-        //let context_ref = Some(context_ref.unwrap_or("").to_string());
-
-        facts.push(FactItem {
-            id : id.to_string(),
-            prefix: prefix.to_string(),
-            name : name.to_string(),
-            value : value.to_string(),
-            decimals : decimals.to_string(),
-            context_ref : context_ref.map(str::to_string),
-            unit_ref : unit_ref.map(str::to_string),
-            units : fact_units,
-            dimensions : fact_dimensions,
-            periods : fact_periods,
-            ..FactItem::default()
-        });
-
-    } 
-    // print the length of facts in a pretty way
-    println!("\n -- Found {} facts -- \n", facts.len());
-
-    // include serde_json
-
-
-    // Save facts to json file
-    let facts_json = serde_json::to_string(&facts).expect("Failed to serialize facts");
-    let output_dir= r"F:\rust_projects\xbrl_parser";
-    let output_file = "facts.json";
-    let mut file = File::create(format!("{}/{}", output_dir, output_file)).expect("Failed to create file");
-    file.write_all(facts_json.as_bytes()).expect("Failed to write to file");
-
 }
 
 
-// Duration_1_1_2021_To_3_31_2021_WD_bpg0CoUKDVIjJYfcRNA
+
+
 
 // Links:
 

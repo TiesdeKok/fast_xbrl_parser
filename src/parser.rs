@@ -26,6 +26,17 @@ pub mod xml {
         pub unit_value : String
     }
 
+    impl Unit {
+        // convert to string
+        pub fn to_string(&self) -> String {
+            let mut unit_string = String::new();
+            unit_string.push_str(&self.unit_type);
+            unit_string.push_str(" -- ");
+            unit_string.push_str(&self.unit_value);
+            unit_string
+        }
+    }
+
     #[derive(Clone, Debug, Serialize, Deserialize)]
     pub struct Period {
         pub period_type : String,
@@ -64,6 +75,17 @@ pub mod xml {
     }
 
     #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct DimensionTableRow {
+        pub cik : u64,
+        pub filing_id : String,
+        pub fact_id : String,
+        pub left_tag : String,
+        pub left_prefix : String,
+        pub right_tag : String,
+        pub right_prefix : String,
+    }
+
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct XBRLFiling {
         pub id : String,
         pub cik : u64,
@@ -97,8 +119,89 @@ pub mod xml {
             println!("Accession Number: {}", self.accession_number);
             println!("Raw URL: {}", self.raw_url);
             println!("Number of Facts: {}", self.num_facts);
-
         }
+
+    }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct FactTableRow {
+        pub cik : Option<u64>,
+        pub filing_id : String,
+        pub fact_id : String,
+        pub tag : String,
+        pub value : String,
+        pub prefix : String,
+        pub prefix_type : String,
+        pub period_start : Option<String>,
+        pub period_end : Option<String>,
+        pub point_in_time : Option<String>,
+        pub unit : Option<String>,
+        pub num_dim : u32,
+    }
+
+    impl FactTableRow {
+        fn default() -> FactTableRow {
+            FactTableRow {
+                cik : None,
+                filing_id : "".to_string(),
+                fact_id : "".to_string(),
+                tag : "".to_string(),
+                value : "".to_string(),
+                prefix : "".to_string(),
+                prefix_type : "".to_string(),
+                period_start : None,
+                period_end : None,
+                point_in_time : None,
+                unit : None,
+                num_dim : 0
+            }
+        }
+    }
+
+    pub fn facts_to_table(facts : Vec<FactItem>, filing_id : String, cik : Option<u64>) ->  Vec<FactTableRow>{
+        let mut table_rows : Vec<FactTableRow> = Vec::new();
+
+        let standard_tags = ["us-gaap", "dei"];
+
+        // Add rows
+        for fact in facts {
+            let prefix_type = if standard_tags.contains(&fact.prefix.as_str()) {"standard"} else {"custom"};
+
+            let mut row = FactTableRow::default();
+            row.cik = cik.clone();
+            row.filing_id = filing_id.clone();
+            row.fact_id = fact.id.clone();
+            row.tag = fact.name.clone();
+            row.value = fact.value.clone();
+            row.prefix = fact.prefix.clone();
+            row.prefix_type = prefix_type.to_string();
+            row.num_dim = fact.dimensions.len() as u32;
+
+            // Periods are processed into three different columns
+            for period in &fact.periods {
+                match period.period_type.as_str() {
+                    "startDate" => row.period_start = Some(period.period_value.clone()),
+                    "endDate" => row.period_end = Some(period.period_value.clone()),
+                    "instant" => row.point_in_time = Some(period.period_value.clone()),
+                    _ => {}
+                }
+            }; 
+        
+            // The units are converted into a single string
+            if fact.units.len() > 0 {
+                let tmp = fact.units.clone()
+                .into_iter()
+                .map(|e| e.to_string())
+                .collect::<Vec<String>>()
+                .join(" || ");
+
+                row.unit = Some(tmp.clone());
+            }
+
+            table_rows.push(row);
+        }
+
+
+        table_rows
     }
 
     pub fn parse_xml_to_facts(raw_xml : String) -> Vec<FactItem> {
@@ -224,7 +327,7 @@ pub mod xml {
     
         // loop over fact_ele using enumerate
         '_fact_loop: for (_i, child) in fact_ele.enumerate() {
-            let id = child.attribute("id").unwrap_or("");
+            let id = child.attribute("id").unwrap_or(""); // Issue here
             let name: String = child.tag_name().name().to_string();
             let namespace: String = child.tag_name().namespace().unwrap_or("").to_string();
             let prefix = child.lookup_prefix(namespace.as_str()).unwrap_or(""); 

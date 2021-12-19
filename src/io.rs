@@ -2,27 +2,10 @@ pub mod load {
 
     use std::fs::{self};
     use std::io::{Read};
+    use std::path::PathBuf;
     use reqwest::blocking::Client;
     use crate::helpers::edgar;
     use crate::helpers::settings::AppConfig;
-
-
-    /*
-    pub fn get (url_data : edgar::EdgarUrl, settings : AppConfig) -> String {
-        
-        if url.done {
-            println!("File already exists, skipping...");
-            let filing = load_local(url_data, settings);
-
-        } else {
-            println!("Downloading {}", url_data.raw_url);
-            let raw_xml = download(url_data.raw_url, settings);
-        }
-
-        "PLACEHOLDER".to_string
-
-    }
-    */
 
     pub fn download(url : String, settings : AppConfig) -> String {   
         let client = Client::new();
@@ -41,15 +24,15 @@ pub mod load {
         }
     }
 
-    pub fn load_json(url_data : edgar::EdgarUrl, settings : AppConfig) -> String {
+    pub fn load_json(file_path : PathBuf) -> String {
 
-        let json_str = fs::read_to_string(url_data.file_path)
+        let json_str = fs::read_to_string(file_path)
         .expect("Something went wrong reading the file");
 
         return json_str
     }
 
-    pub fn load_xml(raw_xml_path : String, settings : AppConfig) -> String {
+    pub fn load_xml(raw_xml_path : String) -> String {
 
         let raw_xml = fs::read_to_string(raw_xml_path)
         .expect("Something went wrong reading the file");
@@ -60,21 +43,34 @@ pub mod load {
 }
 
 pub mod save {
-    use crate::parser::xml::XBRLFiling;
+    use crate::parser::xml::{XBRLFiling, FactItem};
     use std::fs::{self, File};
     use std::io::{Write};
+    use std::path::{PathBuf};
     use crate::helpers::edgar;
-    use std::path::Path;
-    use crate::helpers::settings::AppConfig;
 
-
-    pub fn save(url_data: edgar::EdgarUrl, contents : XBRLFiling, settings : AppConfig) {
-        let out_folder = url_data.file_path.parent().expect("No parent folder found"); 
+    pub fn save_filing(file_path : PathBuf, contents : XBRLFiling) {
+        //let file_path = url_data.file_path.expect("File Path not defined");
+        let out_folder = file_path.parent().expect("No parent folder found"); 
         fs::create_dir_all(&out_folder).expect("Failed to create directory");
 
         let json_str = serde_json::to_string(&contents).expect("Failed to serialize facts");
-        let mut file = File::create(url_data.file_path).expect("Failed to create file");
+        let mut file = File::create(file_path).expect("Failed to create file");
         file.write_all(json_str.as_bytes()).expect("Failed to write to file");
+    }
+
+    pub fn save_facts(file_path : PathBuf, contents : Vec<FactItem>) {
+        //let file_path = url_data.file_path.expect("File Path not defined");
+        let out_folder = file_path.parent().expect("No parent folder found"); 
+        fs::create_dir_all(&out_folder).expect("Failed to create directory");
+
+        let json_str = serde_json::to_string(&contents).expect("Failed to serialize facts");
+        let mut file = File::create(file_path).expect("Failed to create file");
+        file.write_all(json_str.as_bytes()).expect("Failed to write to file");
+    }
+
+    pub fn save_facts_only(folder : PathBuf, filename : String, contents : Vec<FactItem>) {
+
     }
 
 }

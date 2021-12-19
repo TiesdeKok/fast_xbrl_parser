@@ -53,7 +53,7 @@ fn main() {
     let filing: XBRLFiling;
     if url_data.done {
         println!("File already exists, loading local");
-        let raw_json = io::load::load_json(url_data.clone(), app_settings.clone());
+        let raw_json = io::load::load_json(url_data.clone().file_path.expect("File path not defined"));
         filing = serde_json::from_str(&raw_json).unwrap();
     } else {
         println!("File does not exists, so downloading {}", &url_data.raw_url);
@@ -64,11 +64,10 @@ fn main() {
     filing._pretty_print();
 
     // Save to JSON file
-
-    io::save::save(url_data.clone(), filing, app_settings.clone());
+    let file_path = url_data.clone().file_path.expect("File Path not defined");
+    io::save::save_filing(file_path, filing);
     
 }
-
 #[cfg(test)]
 mod tests {
     #[test]

@@ -6,6 +6,9 @@ pub mod load {
     use reqwest::blocking::Client;
     use crate::helpers::edgar;
     use crate::helpers::settings::AppConfig;
+    use flate2::read::GzDecoder;
+
+
 
     pub fn download(url : String, settings : AppConfig) -> String {   
         let client = Client::new();
@@ -43,7 +46,7 @@ pub mod load {
 }
 
 pub mod save {
-    use crate::parser::xml::{XBRLFiling, FactItem};
+    use crate::parser::xml::{XBRLFiling, FactItem, FactTableRow};
     use std::fs::{self, File};
     use std::io::{Write};
     use std::path::{PathBuf};
@@ -55,8 +58,21 @@ pub mod save {
         fs::create_dir_all(&out_folder).expect("Failed to create directory");
 
         let json_str = serde_json::to_string(&contents).expect("Failed to serialize facts");
+
+        // Compress
+
+        /* 
+
+        let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
+        e.write_all(json_str.as_bytes()).expect("Failed to write to zlib");
+        let compressed_bytes = e.finish().expect("Failed to finish zlib");
+
         let mut file = File::create(file_path).expect("Failed to create file");
-        file.write_all(json_str.as_bytes()).expect("Failed to write to file");
+        file.write_all(&compressed_bytes).expect("Failed to write to file");
+        */
+        let mut file = File::create(file_path).expect("Failed to create file");
+        file.write_all(&json_str.as_bytes()).expect("Failed to write to file");
+
     }
 
     pub fn save_facts(file_path : PathBuf, contents : Vec<FactItem>) {
@@ -69,7 +85,14 @@ pub mod save {
         file.write_all(json_str.as_bytes()).expect("Failed to write to file");
     }
 
-    pub fn save_facts_only(folder : PathBuf, filename : String, contents : Vec<FactItem>) {
+    pub fn save_facts_only(file_path : PathBuf, contents : Vec<FactTableRow>) {
+        //let file_path = url_data.file_path.expect("File Path not defined");
+        let out_folder = file_path.parent().expect("No parent folder found"); 
+        fs::create_dir_all(&out_folder).expect("Failed to create directory");
+
+        let json_str = serde_json::to_string(&contents).expect("Failed to serialize facts");
+        let mut file = File::create(file_path).expect("Failed to create file");
+        file.write_all(json_str.as_bytes()).expect("Failed to write to file");
 
     }
 

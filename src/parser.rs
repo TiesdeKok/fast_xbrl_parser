@@ -128,7 +128,7 @@ pub mod xml {
         pub filing_id : String,
         pub fact_id : String,
         pub tag : String,
-        pub value : String,
+        pub value : Option<String>,
         pub prefix : String,
         pub prefix_type : String,
         pub period_start : Option<String>,
@@ -145,7 +145,7 @@ pub mod xml {
                 filing_id : "".to_string(),
                 fact_id : "".to_string(),
                 tag : "".to_string(),
-                value : "".to_string(),
+                value : None,
                 prefix : "".to_string(),
                 prefix_type : "".to_string(),
                 period_start : None,
@@ -171,7 +171,7 @@ pub mod xml {
             row.filing_id = filing_id.clone();
             row.fact_id = fact.id.clone();
             row.tag = fact.name.clone();
-            row.value = fact.value.clone();
+            //row.value = Some(fact.value.clone();) /// IMPORTANT
             row.prefix = fact.prefix.clone();
             row.prefix_type = prefix_type.to_string();
             row.num_dim = fact.dimensions.len() as u32;

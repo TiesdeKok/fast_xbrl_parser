@@ -38,7 +38,7 @@ pub mod edgar {
             if settings.store_location.to_string_lossy().into_owned() != "no_store" {
                 file_path = Some(settings.store_location
                 .join(&cik_padded).join(format!("{}.json", unique_id)));
-                exists = fs::metadata(file_path.clone().expect("File path invalid.")).is_ok();
+                // IMPORTANT - TMP exists = fs::metadata(file_path.clone().expect("File path invalid.")).is_ok();
             } 
             
             EdgarUrl {

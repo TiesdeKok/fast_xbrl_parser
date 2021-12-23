@@ -5,7 +5,7 @@ mod helpers;
 mod parser;
 mod io;
 use crate::helpers::{edgar, settings};
-use crate::parser::xml::XBRLFiling;
+use crate::parser::xml::{XBRLFiling, facts_to_table};
 
 const _VERBOSE : u8 = 0;
 
@@ -61,11 +61,16 @@ fn main() {
         filing = XBRLFiling::parse(raw_xml, url_data.clone());
     }
 
-    filing._pretty_print();
+    //filing._pretty_print();
+
+    let filing_id = filing.clone().accession_number;
+    let cik = Some(filing.clone().cik);
+
+    let facts = facts_to_table(filing.facts, filing_id, cik);
 
     // Save to JSON file
     let file_path = url_data.clone().file_path.expect("File Path not defined");
-    io::save::save_filing(file_path, filing);
+    io::save::save_facts_only(file_path, facts);
     
 }
 #[cfg(test)]

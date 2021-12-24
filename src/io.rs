@@ -5,7 +5,6 @@ pub mod load {
     use reqwest::blocking::Client;
     use crate::helpers;
 
-
     pub fn download(url : String, email : String) -> String { 
         
         let ua = helpers::input::gen_ua(email);
@@ -67,7 +66,10 @@ pub mod save {
                 },
                 Output::Facts(v) => {
                     // Convert to CSV and write to file
-                    let mut wtr = csv::Writer::from_path(file_path).expect("Failed to create file");
+
+                    let mut wtr = csv::WriterBuilder::new()
+                    .delimiter(b',')
+                    .from_path(file_path).expect("Failed to create file");
     
                     for row in v {
                         wtr.serialize(&row).expect("Failed to write to CSV");

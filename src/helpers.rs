@@ -119,3 +119,38 @@ pub mod input {
         
     }
 }
+
+pub mod sanitize {
+    use scraper::Html;
+    use regex::Regex;
+
+    pub fn html(input : String) -> String {
+        let mut output = input.clone();
+        
+        // Remove non ascii characters and replace them with a space
+        output = output.replace(|c: char| !c.is_ascii(), " ");
+
+        // Remove HTML
+        if output.contains("<") {
+            // Remove HTML tags
+            let fragment = Html::parse_fragment(output.as_str());
+            let root = fragment.root_element();
+            output = root.text().collect::<Vec<_>>().join(" ");
+        }
+
+        // Remove duplicate white spaces
+
+        let re = Regex::new(r"\s+").unwrap();
+        output = re.replace_all(output.as_str(), " ").to_string();
+
+        // Debug
+        dbg!(input);
+        println!("");
+        dbg!(&output);
+        println!("\n-----\n");
+        
+        // Return
+        return output
+
+    }
+}

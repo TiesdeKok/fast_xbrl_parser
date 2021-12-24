@@ -10,7 +10,8 @@ pub mod xml {
     use serde::{Serialize, Deserialize};
     use crate::helpers::input::{Input, InputDetails, InputType};
     use crate::io;
-
+    use crate::helpers::sanitize;
+    
     // Define structs
 
     #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -81,11 +82,11 @@ pub mod xml {
         pub cik : Option<String>,
         pub accession_number : Option<String>,
         pub xml_name : String,
-        pub fact_id : String,
-        pub left_tag : String,
-        pub left_prefix : String,
-        pub right_tag : String,
-        pub right_prefix : String,
+        pub context_ref : String,
+        pub axis_prefix : String,
+        pub axis_tag : String,
+        pub member_prefix : String,
+        pub member_tag : String,
     }
 
     impl DimensionTableRow {
@@ -94,11 +95,11 @@ pub mod xml {
                 cik : None,
                 accession_number : None,
                 xml_name : "".to_string(),
-                fact_id : "".to_string(),
-                left_tag : "".to_string(),
-                left_prefix : "".to_string(),
-                right_tag : "".to_string(),
-                right_prefix : "".to_string()
+                context_ref : "".to_string(),
+                axis_prefix : "".to_string(),
+                axis_tag : "".to_string(),
+                member_prefix : "".to_string(),
+                member_tag : "".to_string(),
             }
         }
     }
@@ -108,16 +109,23 @@ pub mod xml {
 
         // Add rows
         for fact in facts {
-            
-            // THIS IS NOT YET IMPLEMENTED, JUST A PLACEHOLDER
 
-            let mut row = DimensionTableRow::default();
-            row.cik = input_details.cik.clone();
-            row.accession_number = input_details.accession_number.clone();
-            row.xml_name = input_details.xml_name.clone();
-            row.fact_id = fact.id.clone();
+            if fact.context_ref.is_some() {
+                for dimension in fact.dimensions {
+                    let mut row = DimensionTableRow::default();
+                    row.cik = input_details.cik.clone();
+                    row.accession_number = input_details.accession_number.clone();
+                    row.xml_name = input_details.xml_name.clone();
+                    row.context_ref = fact.context_ref.clone().expect("No context ref");
+                    row.axis_tag = dimension.key_value.clone();
+                    row.axis_prefix = dimension.key_ns.clone();
+                    row.member_tag = dimension.member_value.clone();
+                    row.member_prefix = dimension.member_ns.clone();
+    
+                    table_rows.push(row);
+                }
+            }
 
-            table_rows.push(row);
         }
 
 
@@ -131,7 +139,7 @@ pub mod xml {
         pub cik : Option<String>,
         pub accession_number : Option<String>,
         pub xml_name : String,
-        pub fact_id : String,
+        pub context_ref : Option<String>,
         pub tag : String,
         pub value : String,
         pub prefix : String,
@@ -149,7 +157,7 @@ pub mod xml {
                 cik : None,
                 accession_number : None,
                 xml_name : "".to_string(),
-                fact_id : "".to_string(),
+                context_ref : None,
                 tag : "".to_string(),
                 value : "".to_string(),
                 prefix : "".to_string(),
@@ -176,12 +184,12 @@ pub mod xml {
             row.cik = input_details.cik.clone();
             row.accession_number = input_details.accession_number.clone();
             row.xml_name = input_details.xml_name.clone();
-            row.fact_id = fact.id.clone();
+            row.context_ref = fact.context_ref.clone();
             row.tag = fact.name.clone();
-            row.value = fact.value.clone();
             row.prefix = fact.prefix.clone();
             row.prefix_type = prefix_type.to_string();
             row.num_dim = fact.dimensions.len() as u32;
+            row.value = fact.value.clone();
 
             // Periods are processed into three different columns
             for period in &fact.periods {
@@ -206,7 +214,6 @@ pub mod xml {
 
             table_rows.push(row);
         }
-
 
         table_rows
     }
@@ -341,6 +348,9 @@ pub mod xml {
             let unit_ref = &child.attribute("unitRef");
             let decimals = child.attribute("decimals").unwrap_or("");
             let value = child.text().unwrap_or("");
+
+            // Sanitize the value
+            let clean_value = sanitize::html(value.to_string().clone());
     
             let mut fact_dimensions : Vec<Dimension> = Vec::new();
             let mut fact_units : Vec<Unit> = Vec::new();
@@ -381,7 +391,7 @@ pub mod xml {
                 id : id.to_string(),
                 prefix: prefix.to_string(),
                 name : name.to_string(),
-                value : value.to_string(),
+                value : clean_value,
                 decimals : decimals.to_string(),
                 context_ref : context_ref.map(str::to_string),
                 unit_ref : unit_ref.map(str::to_string),

@@ -17,4 +17,4 @@ reqwest = { version = "*" , features = ["blocking"] }
 config = "*"
 pyo3 = { version = "0.15.1", features = ["extension-module"] }
 pythonize = "*"
-flate2 = "1.0"
+csv = "*"

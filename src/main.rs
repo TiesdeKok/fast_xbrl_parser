@@ -1,78 +1,108 @@
 use clap::Parser;
-use std::path::{PathBuf};
 
 mod helpers;
 mod parser;
 mod io;
-use crate::helpers::{edgar, settings};
-use crate::parser::xml::{XBRLFiling, facts_to_table};
+use crate::parser::xml::{XBRLFiling};
+use crate::io::save::{Output};
 
-const _VERBOSE : u8 = 0;
+const _DEVMODE : bool = true;
 
 #[derive(Parser, Debug)]
 #[clap(about, author)]
 struct Args {
-    /// URL to retrieve
-    #[clap(short, long, default_value = "https://www.sec.gov/Archives/edgar/data/1765651/000164033421003161/pse_10k_htm.xml")]
-    url: String,
+    /// Input
+    #[clap(short, long, default_value = "no_input")]
+    input: String,
 
-    /// User agent
-    #[clap(long, default_value = "config_value")]
-    user_agent: String,
+    /// JSON flag
+    #[clap(long = "json")]
+    return_json: bool,
 
-    /// Saving location
-    #[clap(short, long, default_value = "config_value")]
-    store_location: String
+    /// facts flag 
+    #[clap(long = "facts")]
+    return_facts: bool,
+
+    /// dimensions flag 
+    #[clap(long = "dimensions")]
+    return_dimensions: bool,
+
+    /// email input
+    #[clap(short, long, default_value = "no_email")]
+    email: String,
+
+    /// Save directory
+    #[clap(short, long, default_value = "no_save_dir")]
+    save_dir: String,
+
+    /// Verbose mode
+    #[clap(short, long, default_value = "0")]
+    verbose: u8,
+
+    /// Silent mode
+    #[clap(long)]
+    silent: bool,
 }
 
 fn main() {
-    // -- Deal with arguments and config file -- 
+    // -- Deal with arguments -- 
 
-    // Initiaize config
-    let mut app_settings = settings::AppConfig::default();
+    let mut args = Args::parse();
 
-    // Get the arguments
-    let args = Args::parse();
+    let mut output: Vec<&str> = Vec::new();
 
-    if args.user_agent != "config_value".to_string() {
-        app_settings.user_agent = args.user_agent.clone();
+    if args.return_json {
+        output.push("json");
     }
 
-    if args.store_location != "config_value".to_string() {
-        app_settings.store_location = PathBuf::from(args.store_location.clone());
+    if args.return_facts {
+        output.push("facts");
     }
 
-    // Process the URL
-
-    let url_data = edgar::parse_url(args.url.to_string(), app_settings.clone());
-
-    // -----------------------
-    // -- Get the JSON data --
-    // -----------------------
-
-    let filing: XBRLFiling;
-    if url_data.done {
-        println!("File already exists, loading local");
-        let raw_json = io::load::load_json(url_data.clone().file_path.expect("File path not defined"));
-        filing = serde_json::from_str(&raw_json).unwrap();
-    } else {
-        println!("File does not exists, so downloading {}", &url_data.raw_url);
-        let raw_xml = io::load::download(args.url, app_settings.clone());
-        filing = XBRLFiling::parse(raw_xml, url_data.clone());
+    if args.return_dimensions {
+        output.push("dimensions");
     }
 
-    //filing._pretty_print();
+    if _DEVMODE {
+        //args.input = r"F:\rust_projects\fast_xbrl_parser\tests\gme-20211030_htm.xml".to_string();
+        args.input = r"https://www.sec.gov/Archives/edgar/data/1326380/000132638021000129/gme-20211030_htm.xml".to_string();
+        output = vec!["json", "facts", "dimensions"];
+        args.email = "ties@ties.com".to_string();
+        args.save_dir = r"D:\xbrl_storage".to_string();
+    }
 
-    let filing_id = filing.clone().accession_number;
-    let cik = Some(filing.clone().cik);
+    // Parse input
 
-    let facts = facts_to_table(filing.facts, filing_id, cik);
+    let filing = XBRLFiling::new(args.input.clone(), args.email.to_string(), output.clone());
+    
+    if !args.silent {
+        println!("{:?}", &filing.info);
+    }
 
-    // Save to JSON file
-    let file_path = url_data.clone().file_path.expect("File Path not defined");
-    io::save::save_facts_only(file_path, facts);
+    // Save to files
+
+    if output.contains(&"json") {
+        let data = Output::Json(filing.json.clone().expect("No json"));
+        let file_name = format!("{}.json", filing.info.xml_name.clone()).to_string();
+        data.save(args.save_dir.clone(), file_name);
+    }
+
+    if output.contains(&"facts") {
+        let data = Output::Facts(filing.facts.clone().expect("No facts"));
+        let file_name = format!("facts_{}.csv", filing.info.xml_name.clone()).to_string();
+        data.save(args.save_dir.clone(), file_name);
+    }
+
+    if output.contains(&"dimensions") {
+        let data = Output::Dimensions(filing.dimensions.clone().expect("No dimensions"));
+        let file_name = format!("dimensions_{}.csv", filing.info.xml_name.clone()).to_string();
+        data.save(args.save_dir.clone(), file_name);
+    }
     
 }
+
+/* TESTS - TBD
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -85,12 +115,4 @@ mod tests {
         }
 }
 
-
-
-
-
-// Links:
-
-// https://www.sec.gov/Archives/edgar/data/51143/000155837021004922/ibm-20210331x10q_htm.xml
-
-//https://www.sec.gov/Archives/edgar/data/0000051143/000155837021004922/0001558370-21-004922-index.htm
+*/

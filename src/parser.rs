@@ -8,7 +8,8 @@ pub mod xml {
     use std::collections::HashMap;
     use regex::Regex;
     use serde::{Serialize, Deserialize};
-    use crate::helpers::edgar;
+    use crate::helpers::input::{Input, InputDetails, InputType};
+    use crate::io;
 
     // Define structs
 
@@ -27,7 +28,6 @@ pub mod xml {
     }
 
     impl Unit {
-        // convert to string
         pub fn to_string(&self) -> String {
             let mut unit_string = String::new();
             unit_string.push_str(&self.unit_type);
@@ -74,10 +74,13 @@ pub mod xml {
         }
     }
 
+    // Logic for dimensions table
+
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct DimensionTableRow {
-        pub cik : u64,
-        pub filing_id : String,
+        pub cik : Option<String>,
+        pub accession_number : Option<String>,
+        pub xml_name : String,
         pub fact_id : String,
         pub left_tag : String,
         pub left_prefix : String,
@@ -85,50 +88,52 @@ pub mod xml {
         pub right_prefix : String,
     }
 
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    pub struct XBRLFiling {
-        pub id : String,
-        pub cik : u64,
-        pub cik_padded : String,
-        pub accession_number : String,
-        pub raw_url : String,
-        pub num_facts : u32,
-        pub facts : Vec<FactItem>,
-    }
-
-    impl XBRLFiling {
-        pub fn parse(raw_xml : String, url_data : edgar::EdgarUrl ) -> XBRLFiling {
-            let facts = parse_xml_to_facts(raw_xml);
-
-            XBRLFiling {
-                id : url_data.unique_id.clone(),
-                cik : url_data.cik.clone(),
-                cik_padded : url_data.cik_padded.clone(),
-                accession_number : url_data.accession_number.clone(),
-                raw_url : url_data.raw_url.clone(),
-                facts : facts.clone(),
-                num_facts : facts.len() as u32
+    impl DimensionTableRow {
+        pub fn default() -> DimensionTableRow {
+            DimensionTableRow {
+                cik : None,
+                accession_number : None,
+                xml_name : "".to_string(),
+                fact_id : "".to_string(),
+                left_tag : "".to_string(),
+                left_prefix : "".to_string(),
+                right_tag : "".to_string(),
+                right_prefix : "".to_string()
             }
-
         }
-
-        pub fn _pretty_print(&self) {
-            // print all the information in the struct in a pretty format with human readable labels
-            println!("CIK: {}", self.cik);
-            println!("CIK Padded: {}", self.cik_padded);
-            println!("Accession Number: {}", self.accession_number);
-            println!("Raw URL: {}", self.raw_url);
-            println!("Number of Facts: {}", self.num_facts);
-        }
-
     }
+
+    pub fn dimensions_to_table(facts : Vec<FactItem>, input_details : InputDetails) ->  Vec<DimensionTableRow>{
+        let mut table_rows : Vec<DimensionTableRow> = Vec::new();
+
+        // Add rows
+        for fact in facts {
+            
+            // THIS IS NOT YET IMPLEMENTED, JUST A PLACEHOLDER
+
+            let mut row = DimensionTableRow::default();
+            row.cik = input_details.cik.clone();
+            row.accession_number = input_details.accession_number.clone();
+            row.xml_name = input_details.xml_name.clone();
+            row.fact_id = fact.id.clone();
+
+            table_rows.push(row);
+        }
+
+
+        table_rows
+    }
+
+    // Logic for facts table
+
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct FactTableRow {
-        pub cik : Option<u64>,
-        pub filing_id : String,
+        pub cik : Option<String>,
+        pub accession_number : Option<String>,
+        pub xml_name : String,
         pub fact_id : String,
         pub tag : String,
-        pub value : Option<String>,
+        pub value : String,
         pub prefix : String,
         pub prefix_type : String,
         pub period_start : Option<String>,
@@ -142,10 +147,11 @@ pub mod xml {
         fn default() -> FactTableRow {
             FactTableRow {
                 cik : None,
-                filing_id : "".to_string(),
+                accession_number : None,
+                xml_name : "".to_string(),
                 fact_id : "".to_string(),
                 tag : "".to_string(),
-                value : None,
+                value : "".to_string(),
                 prefix : "".to_string(),
                 prefix_type : "".to_string(),
                 period_start : None,
@@ -157,7 +163,7 @@ pub mod xml {
         }
     }
 
-    pub fn facts_to_table(facts : Vec<FactItem>, filing_id : String, cik : Option<u64>) ->  Vec<FactTableRow>{
+    pub fn facts_to_table(facts : Vec<FactItem>, input_details : InputDetails) ->  Vec<FactTableRow>{
         let mut table_rows : Vec<FactTableRow> = Vec::new();
 
         let standard_tags = ["us-gaap", "dei"];
@@ -167,11 +173,12 @@ pub mod xml {
             let prefix_type = if standard_tags.contains(&fact.prefix.as_str()) {"standard"} else {"custom"};
 
             let mut row = FactTableRow::default();
-            row.cik = cik.clone();
-            row.filing_id = filing_id.clone();
+            row.cik = input_details.cik.clone();
+            row.accession_number = input_details.accession_number.clone();
+            row.xml_name = input_details.xml_name.clone();
             row.fact_id = fact.id.clone();
             row.tag = fact.name.clone();
-            //row.value = Some(fact.value.clone();) /// IMPORTANT
+            row.value = fact.value.clone();
             row.prefix = fact.prefix.clone();
             row.prefix_type = prefix_type.to_string();
             row.num_dim = fact.dimensions.len() as u32;
@@ -309,7 +316,6 @@ pub mod xml {
                                 if _VERBOSE > 1 {println!("Segment: {} {} {} {}", dimension_ns, dimension_value, key_ns, key_value);}
                             }
     
-    
                         }
                         
                     }
@@ -388,4 +394,82 @@ pub mod xml {
 
         return facts;
     }
+
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    pub struct XBRLFiling {
+        pub info : InputDetails,
+        pub json : Option<Vec<FactItem>>,
+        pub facts : Option<Vec<FactTableRow>>,
+        pub dimensions : Option<Vec<DimensionTableRow>>
+    }
+
+    impl XBRLFiling {
+        pub fn new(input: String, email: String, output: Vec<&str>) -> XBRLFiling {
+
+            // Parse input
+
+            let input_info = Input::new(input.clone());
+
+            // Get XML data
+            
+            let raw_xml : String = match input_info.input_type {
+                InputType::Remote => {
+                    io::load::download(input.clone(), email.to_string())
+                }
+                InputType::Local => {
+                    io::load::load_xml(input.clone())
+                }
+            };
+
+            // Init filing object
+
+            let mut filing_obj = XBRLFiling {
+                info : input_info.clone(),
+                json : None,
+                facts : None,
+                dimensions : None
+            };
+
+            // Parse the XML and generate JSON
+            let output_options = ["json", "facts", "dimensions"];
+
+            // If output contains any of output_options
+            if output.iter().any(|x| output_options.contains(x)) {
+                let json = parse_xml_to_facts(raw_xml);
+
+                // Return json if in output
+                if output.contains(&"json") {
+                    filing_obj.json = Some(json.clone());
+                }
+
+                // Parse facts tables
+    
+                if output.contains(&"facts") {
+                    let facts_table = facts_to_table(json.clone(), input_info.clone());
+                    filing_obj.facts = Some(facts_table);
+                }
+    
+                // Parse dimensions tables
+    
+                if output.contains(&"dimensions") {
+                    let dimensions_table = dimensions_to_table(json.clone(), input_info.clone());
+                    filing_obj.dimensions = Some(dimensions_table);
+                }
+
+            }
+
+            // Return 
+
+            filing_obj
+
+        }
+
+        pub fn _pretty_print(&self) {
+            // print all the information in the struct in a pretty format with human readable labels
+            self.info._pretty_print();
+            //println!("Number of facts found: {}", self.num_facts);
+        }
+
+    }
+    
 }

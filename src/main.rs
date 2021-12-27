@@ -6,7 +6,7 @@ mod io;
 use crate::parser::xml::{XBRLFiling};
 use crate::io::save::{Output};
 
-const _DEVMODE : bool = true;
+const _DEVMODE : bool = false;
 
 #[derive(Parser, Debug)]
 #[clap(about, author)]

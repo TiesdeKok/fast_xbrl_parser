@@ -142,12 +142,6 @@ pub mod sanitize {
 
         let re = Regex::new(r"\s+").unwrap();
         output = re.replace_all(output.as_str(), " ").to_string();
-
-        // Debug
-        dbg!(input);
-        println!("");
-        dbg!(&output);
-        println!("\n-----\n");
         
         // Return
         return output

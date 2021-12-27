@@ -1,0 +1,172 @@
+name: compile
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+    #env:
+    #  VCPKGRS_DYNAMIC: 1
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.target }}
+      - uses: sfackler/actions/rustup@master
+      #- run: echo "::set-output name=version::$(rustc --version)"
+      #  id: rust-version
+      #- run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+      #- run: vcpkg install openssl:x64-windows
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist --no-sdist -m Cargo.toml
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+  macos:
+    name: macos
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x64]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.target }}
+      - uses: sfackler/actions/rustup@master
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist --no-sdist -m Cargo.toml
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+          
+  linux:
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+        library:
+          - name: openssl
+            version: vendored
+          - name: openssl
+            version: 1.1.1m
+            dl-path: /
+    name: ${{ matrix.target }}-${{ matrix.library.name }}-${{ matrix.library.version }}
+    runs-on: ubuntu-latest
+    env:
+      OPENSSL_DIR: /opt/openssl
+      PKG_CONFIG_PATH: /opt/openssl
+      CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER: arm-linux-gnueabihf-gcc
+      CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_AR: arm-linux-gnueabihf-ar
+      CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUNNER: qemu-arm -L /usr/arm-linux-gnueabihf
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+          architecture: ${{ matrix.target }}
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y $packages
+          - run: sudo apt-get remove -y libssl-dev
+      - uses: actions/cache@v2
+        with:
+          path: /opt/openssl
+          key: openssl-${{ matrix.target }}-${{ matrix.library.name }}-${{ matrix.library.version }}-2
+        if: matrix.library.version != 'vendored'
+        id: openssl-cache
+      - name: Build OpenSSL
+        run: |
+          case "${{ matrix.library.name }}" in
+          "openssl")
+            url="https://openssl.org/source${{ matrix.library.dl-path }}/openssl-${{ matrix.library.version }}.tar.gz"
+            ;;
+          "libressl")
+            url="https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${{ matrix.library.version }}.tar.gz"
+            ;;
+          esac
+          case "${{ matrix.target}}" in
+          "x86_64-unknown-linux-gnu")
+            OS_COMPILER=linux-x86_64
+            OS_FLAGS=""
+            ;;
+          "i686-unknown-linux-gnu")
+            OS_COMPILER=linux-elf
+            OS_FLAGS=-m32
+            ;;
+          "arm-unknown-linux-gnueabihf")
+            OS_COMPILER=linux-armv4
+            OS_FLAGS=""
+            export AR=arm-linux-gnueabihf-ar
+            export CC=arm-linux-gnueabihf-gcc
+            ;;
+          esac
+          mkdir /tmp/build
+          cd /tmp/build
+          curl -L $url | tar --strip-components=1 -xzf -
+          case "${{ matrix.library.name }}" in
+          "openssl")
+            ./Configure --prefix=$OPENSSL_DIR --libdir=lib $OS_COMPILER -fPIC -g $OS_FLAGS no-shared
+            ;;
+          "libressl")
+            ./configure --prefix=$OPENSSL_DIR --disable-shared --with-pic
+            ;;
+          esac
+          make
+          make install_sw
+        if: matrix.library.version != 'vendored' && !steps.openssl-cache.outputs.cache-hit
+      - uses: sfackler/actions/rustup@master
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist --no-sdist -m Cargo.toml
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [windows, macos, linux]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Publish to PyPi
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_ACC }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASS }}
+        run: |
+          pip install --upgrade twine
+          twine upload --skip-existing *

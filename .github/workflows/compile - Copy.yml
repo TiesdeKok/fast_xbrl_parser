@@ -1,0 +1,42 @@
+name: compile2
+
+on:
+  workflow_dispatch:
+
+jobs:
+          
+  linux:
+    name: linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+        python-path: ['cp39-cp39'] #['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
+    #container: quay.io/pypa/manylinux2014_x86_64:latest
+    container: quay.io/pypa/manylinux_2_24_x86_64:latest
+    env:
+      RUSTFLAGS: -C target-cpu=k8
+      PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python-path }}/lib
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      # Compile the Python wheel
+      - run: apt update && apt install libffi-dev libssl-dev -y
+      # Compile the command line utility
+      - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: target/${{ matrix.target }}/release/fast_xbrl_parser
+      ## Upload error logs 
+      - name: upload error logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: crash_dump
+          path: /tmp/*.toml

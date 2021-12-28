@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        target:
+          - x86_64-unknown-linux-gnu
         python-path: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
     container: quay.io/pypa/manylinux2014_x86_64:latest
     env:
@@ -20,11 +22,16 @@ jobs:
           toolchain: stable
           override: true
       - run: yum install -y libffi libffi-devel openssl openssl-devel
-      - run: /opt/python/${{ matrix.python-path }}/bin/python -m venv .venv
-      - run: .venv/bin/pip install -U pip wheel
-      - run: .venv/bin/pip install -U twine maturin
-      - run: .venv/bin/maturin build --release --out dist --no-sdist -m Cargo.toml --compatibility manylinux2014 -i /opt/python/${{ matrix.python-path }}/bin/python
-
+      ##- run: /opt/python/${{ matrix.python-path }}/bin/python -m venv .venv
+      ##- run: .venv/bin/pip install -U pip wheel
+      ##- run: .venv/bin/pip install -U twine maturin
+      ##- run: .venv/bin/maturin build --release --out dist --no-sdist -m Cargo.toml --compatibility manylinux2014 -i /opt/python/${{ matrix.python-path }}/bin/python
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: quay.io/pypa/manylinux2014_x86_64:latest
+          args: --release --out dist --no-sdist -m Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:

@@ -143,7 +143,6 @@ pub mod xml {
         pub tag : String,
         pub value : String,
         pub prefix : String,
-        pub prefix_type : String,
         pub period_start : Option<String>,
         pub period_end : Option<String>,
         pub point_in_time : Option<String>,
@@ -161,7 +160,6 @@ pub mod xml {
                 tag : "".to_string(),
                 value : "".to_string(),
                 prefix : "".to_string(),
-                prefix_type : "".to_string(),
                 period_start : None,
                 period_end : None,
                 point_in_time : None,
@@ -174,11 +172,11 @@ pub mod xml {
     pub fn facts_to_table(facts : Vec<FactItem>, input_details : InputDetails) ->  Vec<FactTableRow>{
         let mut table_rows : Vec<FactTableRow> = Vec::new();
 
-        let standard_tags = ["us-gaap", "dei"];
+        //let standard_tags = ["us-gaap", "dei"];
 
         // Add rows
         for fact in facts {
-            let prefix_type = if standard_tags.contains(&fact.prefix.as_str()) {"standard"} else {"custom"};
+            // let prefix_type = if standard_tags.contains(&fact.prefix.as_str()) {"standard"} else {"custom"};
 
             let mut row = FactTableRow::default();
             row.cik = input_details.cik.clone();
@@ -187,7 +185,6 @@ pub mod xml {
             row.context_ref = fact.context_ref.clone();
             row.tag = fact.name.clone();
             row.prefix = fact.prefix.clone();
-            row.prefix_type = prefix_type.to_string();
             row.num_dim = fact.dimensions.len() as u32;
             row.value = fact.value.clone();
 

@@ -32,7 +32,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: target/${{ matrix.target }}/release/fast_xbrl_parser*
+          path: target/${{ matrix.target.target-name }}/release/fast_xbrl_parser.exe
 
   macos:
     name: macos
@@ -42,14 +42,12 @@ jobs:
         target:
           - id: mac64
             target-name: x86_64-apple-darwin
-            architecture: x64
         python-version: ['3.10']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: ${{ matrix.target.architecture }}
       - uses: sfackler/actions/rustup@master
       ## Compile binary
       - run: cargo build --release --target ${{ matrix.target.target-name }}
@@ -58,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: target/${{ matrix.target }}/release/fast_xbrl_parser*
+          path: target/${{ matrix.target.target-name }}/release/fast_xbrl_parser*
           
   linux:
     name: linux

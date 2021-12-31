@@ -11,8 +11,6 @@ jobs:
       matrix:
         target: [x64, x86]
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
-    #env:
-    #  VCPKGRS_DYNAMIC: 1
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -20,10 +18,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.target }}
       - uses: sfackler/actions/rustup@master
-      #- run: echo "::set-output name=version::$(rustc --version)"
-      #  id: rust-version
-      #- run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
-      #- run: vcpkg install openssl:x64-windows
+
       - name: Build Wheels
         uses: messense/maturin-action@v1
         with:
@@ -62,13 +57,6 @@ jobs:
         with:
           name: wheels
           path: dist
-      # Compile the command line utility
-      - run: cargo build --release --target ${{ matrix.target }}
-      - name: Upload binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: binaries
-          path: target/release
           
   linux:
     name: linux

@@ -233,6 +233,7 @@ dependencies = [
  "clap",
  "csv",
  "pyo3",
+ "pyo3-build-config",
  "pythonize",
  "regex",
  "reqwest",

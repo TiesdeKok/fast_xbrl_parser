@@ -1,0 +1,101 @@
+name: Compile Command Line Utility
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+        python-version: ['3.10']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.target }}
+      - uses: sfackler/actions/rustup@master
+      ## Compile binary
+      - run: cargo build --release --target ${{ matrix.target }}
+      ## Upload binary
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: target/${{ matrix.target }}/release/fast_xbrl_parser*
+
+  macos:
+    name: macos
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x64]
+        python-version: ['3.10']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.target }}
+      - uses: sfackler/actions/rustup@master
+      ## Compile binary
+      - run: cargo build --release --target ${{ matrix.target }}
+      ## Upload binary
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: target/${{ matrix.target }}/release/fast_xbrl_parser*
+          
+  linux:
+    name: linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+        python-path: ['cp310-cp310']
+    container: quay.io/pypa/manylinux_2_24_x86_64:latest
+    env:
+      RUSTFLAGS: -C target-cpu=k8
+      PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python-path }}/lib
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      # Compile the Python wheel
+      - run: apt update && apt install libffi-dev libssl-dev -y
+      # Compile the command line utility
+      - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: target/${{ matrix.target }}/release/fast_xbrl_parser
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [windows, macos, linux]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Publish to PyPi
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_ACC }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASS }}
+        run: |
+          pip install --upgrade twine
+          twine upload --skip-existing *
+
+## TODO:
+## It would make more sense to split the Python package and CLU into seperate workspaces, this way the dependencies would be seperate

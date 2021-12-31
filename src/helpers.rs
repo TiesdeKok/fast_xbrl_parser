@@ -1,7 +1,6 @@
 pub mod input {
     use serde::{Serialize, Deserialize};
     use std::fs::{self};
-    use pyo3::prelude::*;
 
     // Input types
 
@@ -58,7 +57,6 @@ pub mod input {
 
     // Parse details out of the input string
 
-    #[pyclass]
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct InputDetails {  
         pub raw_input : String,

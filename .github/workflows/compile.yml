@@ -1,4 +1,4 @@
-name: compile
+name: Compile Python Package
 
 on:
   workflow_dispatch:
@@ -100,13 +100,6 @@ jobs:
         with:
           name: wheels
           path: dist
-      # Compile the command line utility
-      - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
-      - name: Upload binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: binaries
-          path: target/release
       ## Upload error logs 
       - name: upload error logs
         if: always()

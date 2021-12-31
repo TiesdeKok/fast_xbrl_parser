@@ -73,6 +73,11 @@ fn main() {
 
     // Parse input
 
+    if args.input == "no_input" {
+        println!("Please provide an input file");
+        return;
+    } 
+
     let filing = XBRLFiling::new(args.input.clone(), args.email.to_string(), output.clone());
     
     if !args.silent {

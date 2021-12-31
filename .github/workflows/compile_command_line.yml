@@ -10,18 +10,22 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-pc-windows-msvc
-          - i686-pc-windows-msvc	
+          - id: win64
+            target-name:  x86_64-pc-windows-msvc
+            architecture: x64
+          - id: win32
+            target-name: i686-pc-windows-msvc	
+            architecture: x86
         python-version: ['3.10']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: ${{ matrix.target }}
+          architecture: ${{ matrix.target.architecture }}
       - uses: sfackler/actions/rustup@master
       ## Compile binary
-      - run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target.target-name }}
       ## Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
@@ -35,17 +39,19 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-apple-darwin
+          - id: mac64
+            target-name: x86_64-apple-darwin
+            architecture: x64
         python-version: ['3.10']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: ${{ matrix.target }}
+          architecture: ${{ matrix.target.architecture }}
       - uses: sfackler/actions/rustup@master
       ## Compile binary
-      - run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target.target-name }}
       ## Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2

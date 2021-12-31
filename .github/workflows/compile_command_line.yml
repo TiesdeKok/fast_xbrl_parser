@@ -25,7 +25,8 @@ jobs:
           architecture: ${{ matrix.target.architecture }}
       - uses: sfackler/actions/rustup@master
       ## Compile binary
-      - run: cargo build --release --target ${{ matrix.target.target-name }}
+      - run: rustup target add ${{ matrix.target.target-name }}
+      - run: cargo build --release --target 
       ## Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2

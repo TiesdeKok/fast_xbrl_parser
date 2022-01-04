@@ -1,5 +1,5 @@
 <h1 align="center">
-    Fast XBRL Parser
+    Fast XBRL Parser<br>
     
    <img src="https://i.imgur.com/2KcunUN.png" alt="Fast XBRL Parser" title="Fast XBRL Parser" />
    

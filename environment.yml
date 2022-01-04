@@ -1,0 +1,12 @@
+name: fast_xbrl_parser_demo
+
+dependencies:
+  - python=3.9
+  - pip
+  - jupyter
+  - matplotlib
+  - numpy
+  - pandas
+  - pip:
+    - tqdm
+    - fast_xbrl_parser

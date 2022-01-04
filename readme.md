@@ -1,20 +1,20 @@
 <h1 align="center">
     Fast XBRL Parser
-    <!-- 
-   <img src="https://i.imgur.com/KZGIDj0.png" alt="Get started with Python for Research" title="Get started with Python for Research" />
-   -->
+    
+   <img src="https://i.imgur.com/2KcunUN.png" alt="Fast XBRL Parser" title="Fast XBRL Parser" />
+   
 </h1>
 <p align="center">  
- <a href="https://mybinder.org/v2/gh/TiesdeKok/fast_xbrl_parser/master?urlpath=lab"><img src="https://mybinder.org/badge_logo.svg"></a>
+ <a href="https://mybinder.org/v2/gh/TiesdeKok/fast_xbrl_parser/HEAD?labpath=examples%2Fexample.ipynb"><img src="https://mybinder.org/badge_logo.svg"></a>
  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <img src="https://img.shields.io/badge/last%20updated-December%202021-3d62d1">
+  <img src="https://img.shields.io/badge/last%20updated-January%202022-3d62d1">
  
 </p>
 
 <p align="center">
-An XBRL parser built in Rust that provides a fast, easy, and lightweight way to convert XBRL XML files into JSON or CSV. Available as a Python library or a standalone command line utility. <br>
+An XBRL parser built in Rust that provides a fast, easy, and lightweight way to convert XBRL XML files into JSON or CSV. Available as a Python library or a standalone command line utility. <br><br>
 <strong>Warning - currently in development stages - use at your own risk</strong>
-<br>
+<br><br>
   <span style='font-size: 15pt'><strong>Author:</strong> Ties de Kok (<a href="https://www.TiesdeKok.com">Personal Page</a>)</span>
 </p>
 

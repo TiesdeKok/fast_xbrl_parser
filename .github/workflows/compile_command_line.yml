@@ -46,7 +46,7 @@ jobs:
       # Compile binary
       - run: cargo build --release --target ${{ matrix.target.target-name }}
       # Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz -C target/${{matrix.target.target-name}}/release/GNUSparseFile.0 fast_xbrl_parser
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz -C target/${{matrix.target.target-name}}/release fast_xbrl_parser
       # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
@@ -84,8 +84,9 @@ jobs:
           path: fast-xbrl-parser-${{matrix.target}}.tar.gz
 
 ## Current issues to fix:
-## [x] 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
-## [x] 2) The Mac OS binary is giving an error
-#  [ ] 3) The Mac OS binary is missing?
-## [ ] 4) Automatically add version to the file name
+# [x] 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
+# [x] 2) The Mac OS binary is giving an error
+# [ ] 3) The Mac OS binary is creating a GNUSparseFile.0 folder ?
+# [ ] 4) Automatically add version to the file name
+# [ ] 5) Add tests to workflow
 

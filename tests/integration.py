@@ -112,6 +112,13 @@ def test_python_url(url):
     assert isinstance(xbrl_fact_df, pd.DataFrame), "facts is not a pandas DataFrame"
     assert isinstance(xbrl_dim_df, pd.DataFrame), "dimensions is not a pandas DataFrame"
 
+    ## Check to make sure there are no duplicates in dimension_df
+    len_before = len(xbrl_dim_df)
+    xbrl_dim_df.drop_duplicates(inplace=True)
+    len_after = len(xbrl_dim_df)
+    assert len_before == len_after, "Duplicate dimensions found"
+
+
 ## -------------------
 ## Parse from XML file
 ## -------------------
@@ -133,6 +140,12 @@ def test_python_file(file):
 
     assert isinstance(xbrl_fact_df, pd.DataFrame)
     assert isinstance(xbrl_dim_df, pd.DataFrame)
+
+    ## Check to make sure there are no duplicates in dimension_df
+    len_before = len(xbrl_dim_df)
+    xbrl_dim_df.drop_duplicates(inplace=True)
+    len_after = len(xbrl_dim_df)
+    assert len_before == len_after, "Duplicate dimensions found"
 
 # ========================
 # Command line application

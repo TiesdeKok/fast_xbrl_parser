@@ -106,23 +106,29 @@ pub mod xml {
 
     pub fn dimensions_to_table(facts : Vec<FactItem>, input_details : InputDetails) ->  Vec<DimensionTableRow>{
         let mut table_rows : Vec<DimensionTableRow> = Vec::new();
+        let mut context_ref_tracker = Vec::new();
 
         // Add rows
         for fact in facts {
 
             if fact.context_ref.is_some() {
                 for dimension in fact.dimensions {
-                    let mut row = DimensionTableRow::default();
-                    row.cik = input_details.cik.clone();
-                    row.accession_number = input_details.accession_number.clone();
-                    row.xml_name = input_details.xml_name.clone();
-                    row.context_ref = fact.context_ref.clone().expect("No context ref");
-                    row.axis_tag = dimension.key_value.clone();
-                    row.axis_prefix = dimension.key_ns.clone();
-                    row.member_tag = dimension.member_value.clone();
-                    row.member_prefix = dimension.member_ns.clone();
-    
-                    table_rows.push(row);
+                    // This if statement is to prevent duplicate rows
+                    if !context_ref_tracker.contains(&fact.context_ref.clone().expect("No context ref"))  {
+                        let mut row = DimensionTableRow::default();
+                        row.cik = input_details.cik.clone();
+                        row.accession_number = input_details.accession_number.clone();
+                        row.xml_name = input_details.xml_name.clone();
+                        row.context_ref = fact.context_ref.clone().expect("No context ref");
+                        row.axis_tag = dimension.key_value.clone();
+                        row.axis_prefix = dimension.key_ns.clone();
+                        row.member_tag = dimension.member_value.clone();
+                        row.member_prefix = dimension.member_ns.clone();
+        
+                        table_rows.push(row);
+                        context_ref_tracker.push(fact.context_ref.clone().expect("No context ref"));
+                    }
+
                 }
             }
 

@@ -75,12 +75,12 @@ jobs:
       # Compile the command line utility
       - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
       ## Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target}}.tar.gz target/${{ matrix.target }}/release
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz
+          path: fast-xbrl-parser-${{matrix.target.target}}.tar.gz
 
 ## Current issues to fix:
 ## [ ] 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other

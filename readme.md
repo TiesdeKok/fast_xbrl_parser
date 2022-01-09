@@ -23,6 +23,9 @@ An XBRL parser built in Rust that provides a fast, easy, and lightweight way to 
   * [Introduction](#introduction)
   	* [Design philosophy](#philosophy)
   	* [Caveats](#caveats)
+  * [Installation](#installation)
+      * [Python](#python-install)
+      * [Command Line Tool](#cli-install) 
   * [How to use](#howtouse)
       * [Python](#python)
       * [Command line](#commandline)
@@ -48,6 +51,19 @@ It is built with the following objectives in mind:
 - Not validated against the XBRL specification    
 
 Use at your own discretetion and always verify the results yourself. 
+
+<h2 id="installation">Installation</h2>
+
+<h3 id="python-install">Python package</h3>
+
+```bash
+pip install fast-xbrl-parser
+```
+<h3 id="cli-install">CLI tool</h3>
+
+Download the executable file from:
+
+TBD
 
 <h2 id="howtouse">Basic use</h2>
 

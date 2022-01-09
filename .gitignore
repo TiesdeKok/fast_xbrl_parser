@@ -1,6 +1,5 @@
 /target
 *.ipynb_checkpoints
-**.xml
 /.vscode
 *__pycache__
 *DONTSYNC*

@@ -23,12 +23,12 @@ jobs:
       - run: rustup target add ${{ matrix.target.target-name }}
       - run: cargo build --release --target ${{ matrix.target.target-name }}
       # Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release/fast_xbrl_parser.exe
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz -C target/${{matrix.target.target-name}}/release fast_xbrl_parser.exe
       # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: binaries
+          name: ${{matrix.target.target-name}}
           path: fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz
 
   macos:
@@ -46,12 +46,12 @@ jobs:
       # Compile binary
       - run: cargo build --release --target ${{ matrix.target.target-name }}
       # Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release/fast_xbrl_parser
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz -C target/${{matrix.target.target-name}}/release/GNUSparseFile.0 fast_xbrl_parser
       # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: binaries
+          name: ${{matrix.target.target-name}}
           path: fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz
           
   linux:
@@ -75,12 +75,12 @@ jobs:
       # Compile the command line utility
       - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
       # Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target}}.tar.gz target/${{ matrix.target }}/release/fast_xbrl_parser
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target}}.tar.gz -C target/${{matrix.target}}/release fast_xbrl_parser
       # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: binaries
+          name: ${{matrix.target}}
           path: fast-xbrl-parser-${{matrix.target}}.tar.gz
 
 ## Current issues to fix:

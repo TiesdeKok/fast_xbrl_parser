@@ -13,7 +13,7 @@
 
 <p align="center">
 An XBRL parser built in Rust that provides a fast, easy, and lightweight way to convert XBRL XML files into JSON or CSV. Available as a Python library or a standalone command line utility. <br><br>
-<strong>Warning - currently in development stages - use at your own risk</strong>
+<strong>Warning - currently in a beta stage - use at your own risk</strong>
 <br><br>
   <span style='font-size: 15pt'><strong>Author:</strong> Ties de Kok (<a href="https://www.TiesdeKok.com">Personal Page</a>)</span>
 </p>
@@ -31,34 +31,58 @@ An XBRL parser built in Rust that provides a fast, easy, and lightweight way to 
 
 <h2 id="introduction">Introduction</h2>
   
-
 <h3 id="philosophy">Design philosophy</h3>
 
-The objective of `fast-xbrl-parser` is to provide a fast, easy, and lightweight way to parse XBRL XML files into JSON or CSV. It is built with the following objectives in mind:
+The objective of `fast-xbrl-parser` is to provide a fast, easy, and lightweight way to parse XBRL XML files into JSON or CSV. 
+It is built with the following objectives in mind:
 
-- Easy to use API
-- Very fast 
-- Lightweight and easy to install
-- Cross-platform support (Windows, Linux, and Mac OS are supported)
+- An easy to use interface   
+- Very fast      
+- Lightweight and easy to install    
+- Cross-platform support (Windows, Linux, and Mac OS are supported)    
 
 <h3 id="caveats">Caveats</h3>
 
-- Only tested on US XBRL files from SEC EDGAR
-- Opinionated conversion to CSV
-- Not validated against the XBRL specification
+- Only tested on US XBRL files from SEC EDGAR   
+- Opinionated conversion to CSV     
+- Not validated against the XBRL specification    
 
 Use at your own discretetion and always verify the results yourself. 
 
-<h2 id="howtouse">How to use the parser</h2>
+<h2 id="howtouse">Basic use</h2>
+
+For full examples and documentation see: [notebook](https://github.com/TiesdeKok/fast_xbrl_parser/blob/master/examples/example.ipynb)
 
 <h3 id="python">As a Python package</h3>
 
-TBD
+```python
+import fast_xbrl_parser as fxp
+
+input = "https://www.sec.gov/Archives/edgar/data/1326380/000132638021000129/gme-20211030_htm.xml" ## Edgar URL
+#input = "gme-20211030_htm.xml" ## Local XML file
+
+
+xbrl_dict = fxp.parse(
+    input, 
+    output=['json', 'facts', 'dimensions'],   ### You can adjust this to only return certain outputs. 
+    email = "demo@fast-xbrl-parser.com"       ### Adjust this to reflect your email address. This is required by the SEC Edgar system when passing a URL.  
+) 
+
+json_valid_dict = xbrl_dict['json']
+facts_list = xbrl_dict['facts']
+facts_df = pd.DataFrame(facts_list)
+```
 
 <h3 id="commandline">Standalone using the command line</h3>
 
-TBD
+```bash
+fast_xbrl_parser.exe
+--input "https://www.sec.gov/Archives/edgar/data/1589526/000158952621000140/blbd-20211002_htm.xml" 
+--json --facts --dimensions 
+--save-dir "D:\xbrl_storage" --email "demo@fast-xbrl-parser.com"
 
+## This will save the JSON / CSV files in the `save-dir`
+```
 
 <h2 id="questions">Questions?</h2>
 

@@ -228,7 +228,7 @@ dependencies = [
 
 [[package]]
 name = "fast-xbrl-parser"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "csv",
  "fast_xbrl_parser",
@@ -245,7 +245,7 @@ dependencies = [
 
 [[package]]
 name = "fast_xbrl_parser"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "clap",
  "csv",

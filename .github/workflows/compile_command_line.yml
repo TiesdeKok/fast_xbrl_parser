@@ -19,12 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: sfackler/actions/rustup@master
-      ## Compile binary
+      # Compile binary
       - run: rustup target add ${{ matrix.target.target-name }}
       - run: cargo build --release --target ${{ matrix.target.target-name }}
-      ## Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release
-      ## Upload binary
+      # Archive binary
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release/fast_xbrl_parser.exe
+      # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
@@ -43,11 +43,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: sfackler/actions/rustup@master
-      ## Compile binary
+      # Compile binary
       - run: cargo build --release --target ${{ matrix.target.target-name }}
-      ## Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release
-      ## Upload binary
+      # Archive binary
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release/fast_xbrl_parser
+      # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
@@ -74,19 +74,18 @@ jobs:
       - run: apt update && apt install libffi-dev libssl-dev -y
       # Compile the command line utility
       - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
-      ## Archive binary
-      - run: tar -czvf fast-xbrl-parser-${{matrix.target}}.tar.gz target/${{ matrix.target }}/release
+      # Archive binary
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target}}.tar.gz target/${{ matrix.target }}/release/fast_xbrl_parser
+      # Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: fast-xbrl-parser-${{matrix.target.target}}.tar.gz
+          path: fast-xbrl-parser-${{matrix.target}}.tar.gz
 
 ## Current issues to fix:
-## [ ] 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
+## [x] 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
 ## [x] 2) The Mac OS binary is giving an error
-#  [ ] 3) The Mac OS binary is much smaller? Probably even too small?
-## [ ] 4) Version?
+#  [ ] 3) The Mac OS binary is missing?
+## [ ] 4) Automatically add version to the file name
 
-## TODO:
-## [x] It would make more sense to split the Python package and CLU into seperate workspaces, this way the dependencies would be seperate

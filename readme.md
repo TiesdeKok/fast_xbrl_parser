@@ -56,6 +56,8 @@ Use at your own discretetion and always verify the results yourself.
 
 <h3 id="python-install">Python package</h3>
 
+**Note:** `fast-xbrl-parser` requires Python 3.6+
+
 ```bash
 pip install fast-xbrl-parser
 ```

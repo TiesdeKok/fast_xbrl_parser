@@ -16,13 +16,8 @@ jobs:
           - id: win32
             target-name: i686-pc-windows-msvc	
             architecture: x86
-        python-version: ['3.10']
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: ${{ matrix.target.architecture }}
       - uses: sfackler/actions/rustup@master
       ## Compile binary
       - run: rustup target add ${{ matrix.target.target-name }}
@@ -45,9 +40,6 @@ jobs:
         python-version: ['3.10']
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: sfackler/actions/rustup@master
       ## Compile binary
       - run: cargo build --release --target ${{ matrix.target.target-name }}
@@ -65,18 +57,16 @@ jobs:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
-        python-path: ['cp310-cp310']
     container: quay.io/pypa/manylinux_2_24_x86_64:latest
     env:
       RUSTFLAGS: -C target-cpu=k8
-      PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python-path }}/lib
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-      # Compile the Python wheel
+      # Install SSH
       - run: apt update && apt install libffi-dev libssl-dev -y
       # Compile the command line utility
       - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
@@ -86,5 +76,9 @@ jobs:
           name: binaries
           path: target/${{ matrix.target }}/release/fast_xbrl_parser
 
+## Current issues to fix:
+## 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
+## 2) The Mac OS binary is giving an error
+
 ## TODO:
-## It would make more sense to split the Python package and CLU into seperate workspaces, this way the dependencies would be seperate
+## [x] It would make more sense to split the Python package and CLU into seperate workspaces, this way the dependencies would be seperate

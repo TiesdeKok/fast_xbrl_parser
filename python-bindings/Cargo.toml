@@ -1,0 +1,23 @@
+[package]
+name = "fast-xbrl-parser"
+version = "0.2.2"
+edition = "2021"
+
+[lib]
+name = "fast_xbrl_parser"
+crate-type = ["cdylib"]
+
+[dependencies]
+roxmltree = "*"
+regex = "*"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "*"
+reqwest = { version = "*" , features = ["blocking"] }
+pyo3 = { version = "0.15.1", features = ["extension-module"] }
+pythonize = "*"
+csv = "*"
+scraper = "*"
+fast_xbrl_parser = { path = ".." }
+
+[build-dependencies]
+pyo3-build-config = "*"

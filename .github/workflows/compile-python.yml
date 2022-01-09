@@ -1,4 +1,4 @@
-name: Compile Python Package
+name: Compile Python Package Wheels
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: auto
-          args: --release --out dist --no-sdist -m Cargo.toml
+          args: --release --out dist --no-sdist -m python-bindings/Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -51,7 +51,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: auto
-          args: --release --out dist --no-sdist -m Cargo.toml
+          args: --release --out dist --no-sdist -m python-bindings/Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -82,7 +82,7 @@ jobs:
       - run: /opt/python/${{ matrix.python-path }}/bin/python -m venv .venv
       - run: .venv/bin/pip install -U pip wheel
       - run: .venv/bin/pip install -U twine maturin
-      - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl .venv/bin/maturin build --no-sdist --release --strip --out dist --manylinux 2_24 -i /opt/python/${{ matrix.python-path }}/bin/python --target ${{ matrix.target }}
+      - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl .venv/bin/maturin build --no-sdist --release --strip --out dist --manylinux 2_24 -i /opt/python/${{ matrix.python-path }}/bin/python --target ${{ matrix.target }} -m python-bindings/Cargo.toml
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:

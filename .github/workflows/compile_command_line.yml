@@ -22,12 +22,14 @@ jobs:
       ## Compile binary
       - run: rustup target add ${{ matrix.target.target-name }}
       - run: cargo build --release --target ${{ matrix.target.target-name }}
+      ## Archive binary
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release
       ## Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: target/${{ matrix.target.target-name }}/release/fast_xbrl_parser.exe
+          path: fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz
 
   macos:
     name: macos
@@ -43,12 +45,14 @@ jobs:
       - uses: sfackler/actions/rustup@master
       ## Compile binary
       - run: cargo build --release --target ${{ matrix.target.target-name }}
+      ## Archive binary
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release
       ## Upload binary
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: target/${{ matrix.target.target-name }}/release/fast_xbrl_parser*
+          path: fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz
           
   linux:
     name: linux
@@ -70,15 +74,19 @@ jobs:
       - run: apt update && apt install libffi-dev libssl-dev -y
       # Compile the command line utility
       - run: OPENSSL_STATIC=1 OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build --release --target ${{ matrix.target }}
+      ## Archive binary
+      - run: tar -czvf fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz target/${{ matrix.target.target-name }}/release
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: binaries
-          path: target/${{ matrix.target }}/release/fast_xbrl_parser
+          path: fast-xbrl-parser-${{matrix.target.target-name}}.tar.gz
 
 ## Current issues to fix:
-## 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
-## 2) The Mac OS binary is giving an error
+## [ ] 1) The 32 and 64 bit binaries for windows ahre the same name and overwrite each other
+## [x] 2) The Mac OS binary is giving an error
+#  [ ] 3) The Mac OS binary is much smaller? Probably even too small?
+## [ ] 4) Version?
 
 ## TODO:
 ## [x] It would make more sense to split the Python package and CLU into seperate workspaces, this way the dependencies would be seperate

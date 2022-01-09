@@ -65,7 +65,7 @@ pip install fast-xbrl-parser
 
 Download the executable file from:
 
-TBD
+https://github.com/TiesdeKok/fast_xbrl_parser/releases/
 
 <h2 id="howtouse">Basic use</h2>
 

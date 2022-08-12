@@ -13,7 +13,6 @@
 
 <p align="center">
 An XBRL parser built in Rust that provides a fast, easy, and lightweight way to convert XBRL XML files into JSON or CSV. Available as a Python library or a standalone command line utility. <br><br>
-<strong>Warning - currently in a beta stage - use at your own risk</strong>
 <br><br>
   <span style='font-size: 15pt'><strong>Author:</strong> Ties de Kok (<a href="https://www.TiesdeKok.com">Personal Page</a>)</span>
 </p>
